@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CLF-C02 Study Hub</title>
+  <meta name="description" content="A Cloud Practitioner study guide and quiz written by the AWS Student Builder Group at WeThinkCode_.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <span class="badge">CLF-C02</span>
+        <h1>Study Hub</h1>
+      </div>
+      <p class="sub">Written by the AWS Student Builder Group at WeThinkCode_. <span id="count"></span></p>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-view="study" aria-selected="true">Study</button>
+        <button role="tab" data-view="quiz" aria-selected="false">Quiz</button>
+        <button role="tab" data-view="qotd" aria-selected="false" hidden>Question of the day</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="study" class="view">
+      <div class="filters">
+        <input id="search" type="search" placeholder="Search services and concepts" aria-label="Search">
+        <div class="chips" id="domain-chips"></div>
+      </div>
+      <div id="cards"></div>
+    </section>
+
+    <section id="quiz" class="view" hidden>
+      <div id="quiz-setup" class="panel">
+        <h2>Practice quiz</h2>
+        <p class="muted">Questions written by group members. Note your score for the weekly check-in.</p>
+        <label>Domain
+          <select id="quiz-domain">
+            <option value="mix">Exam mix (24 / 30 / 34 / 12)</option>
+            <option value="D1">D1 Cloud Concepts</option>
+            <option value="D2">D2 Security and Compliance</option>
+            <option value="D3">D3 Cloud Technology and Services</option>
+            <option value="D4">D4 Billing, Pricing, and Support</option>
+          </select>
+        </label>
+        <label>Length
+          <select id="quiz-length">
+            <option value="10">10 questions</option>
+            <option value="20">20 questions</option>
+            <option value="65">Full mock: 65 questions, 90 minutes</option>
+          </select>
+        </label>
+        <button id="quiz-start" class="primary">Start</button>
+        <p id="quiz-note" class="muted"></p>
+      </div>
+      <div id="quiz-run" class="panel" hidden></div>
+    </section>
+
+    <section id="qotd" class="view" hidden>
+      <div id="qotd-body" class="panel"></div>
+    </section>
+  </main>
+
+  <footer class="wrap muted">
+    Every card links to the AWS page it was checked against. Spot a mistake? Fix it with a pull request.
+  </footer>
+
+  <script src="config.js" onerror="window.HUB_CONFIG = window.HUB_CONFIG || {}"></script>
+  <script src="app.js"></script>
+</body>
+</html>

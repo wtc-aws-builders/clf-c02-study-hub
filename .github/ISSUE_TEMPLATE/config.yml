@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Ask a question in Teams
+    url: https://teams.microsoft.com/
+    about: Quick questions about the week are faster in the Sprint channel on Teams.
