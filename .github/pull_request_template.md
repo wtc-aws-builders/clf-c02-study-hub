@@ -21,6 +21,7 @@ CloudTrail event name, test output pasted as text.
 
 - [ ] I ran `python build/tools/hub.py check` and it passed
 - [ ] My card is in my own words, and its answer matches the AWS page I linked
+- [ ] My question is my own and based only on AWS information. It is not from the real exam, a dump site or a paid practice test
 - [ ] No access keys, passwords or 12 digit account IDs anywhere in this PR
 - [ ] I cleaned up (or kept until week 9) what this week's issue says
 - [ ] I asked someone to review, and I have reviewed someone else's PR this week
