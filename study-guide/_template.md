@@ -22,7 +22,8 @@ The service or concept people mix it up with, and the one difference that tells 
 
 ## Exam-style question
 
-A scenario question in the style of the exam. For a "choose two" question, add (Choose two.) at the end and give five options.
+Write your own scenario question, based only on AWS documentation. Never copy or reword real exam questions,
+dump sites or paid practice tests. For a "choose two" question, add (Choose two.) at the end and give five options.
 
 - A) First option
 - B) Second option
