@@ -6,6 +6,9 @@
                                                 also check new files belong to the PR author
     python build/tools/hub.py build            write build/site/cards.json and the Lambda's questions.json
 
+Questions come from two places: every student card (one question each), and the leads' seed bank in
+study-guide/question-bank/<domain-folder>.md (many questions per file, labelled as written by the leads).
+
 CI runs `check` on every pull request and `build` before publishing to GitHub Pages.
 """
 
@@ -17,6 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 GUIDE = ROOT / "study-guide"
+BANK = GUIDE / "question-bank"
 LOGS = ROOT / "build" / "log"
 SITE_JSON = ROOT / "build" / "site" / "cards.json"
 LAMBDA_JSON = ROOT / "build" / "lambda" / "hub_api" / "questions.json"
@@ -45,7 +49,7 @@ SECRET_PATTERNS = [
 # Lines from the templates. If one is still there, the card or log has not been filled in yet.
 TEMPLATE_PHRASES = [
     "No copy and paste from AWS pages", "One or two real situations", "- A) First option",
-    "the-page-you-checked-this-against", "The steps from this week's issue", "your-github-username",
+    "the-page-you-checked-this-against", "Write your own scenario question, based only on", "The steps from this week's issue", "your-github-username",
 ]
 
 
@@ -195,6 +199,80 @@ def read_log(path, problems):
         if not sections.get(section):
             problems.append(f"{rel(path)}: section '## {section}' is missing or empty")
 
+BANK_ID = re.compile(r"^(D[1-4])-(\d{2,3}):\s*(.+)$")
+
+
+def read_bank(path, problems):
+    """Parses one question bank file. Each question starts with '## D1-01: Topic'."""
+    domain_dir = path.stem
+    if domain_dir not in DOMAINS:
+        problems.append(f"{rel(path)}: bank files are named after a domain folder ({', '.join(DOMAINS)})")
+        return []
+    code, name = DOMAINS[domain_dir]
+    text = path.read_text(encoding="utf-8")
+    check_secrets(path, text, problems)
+
+    blocks, current = [], None
+    for line in text.splitlines():
+        if line.startswith("## "):
+            current = [line[3:].strip()]
+            blocks.append(current)
+        elif current is not None:
+            current.append(line)
+
+    items, seen = [], set()
+    for block in blocks:
+        header, body = block[0], block[1:]
+        m = BANK_ID.match(header)
+        where = f"{rel(path)} '{header}'"
+        if not m or m.group(1) != code:
+            problems.append(f"{where}: headings look like '## {code}-01: Topic'")
+            continue
+        qid = f"{m.group(1)}-{m.group(2)}"
+        if qid in seen:
+            problems.append(f"{where}: {qid} is used twice")
+        seen.add(qid)
+        task = next((l.split(":", 1)[1].strip() for l in body if l.strip().lower().startswith("- task statement:")), "")
+        sources = re.findall(r"https?://\S+", "\n".join(l for l in body if l.strip().lower().startswith("source:")))
+        rest = "\n".join(l for l in body
+                         if not l.strip().lower().startswith(("- task statement:", "source:")))
+        stem, options, answer, why = parse_question(rest)
+        start = len(problems)
+        if not re.match(rf"^{code[1]}\.[1-8]$", task):
+            problems.append(f"{where}: add '- Task statement: {code[1]}.x'")
+        if not stem:
+            problems.append(f"{where}: the question text is missing")
+        if "".join(sorted(options)) not in ("ABCD", "ABCDE"):
+            problems.append(f"{where}: needs options A) to D) (or A) to E) for choose two)")
+        if not answer or any(a not in options for a in answer):
+            problems.append(f"{where}: add 'Answer: <letter>' using one of the options")
+        if len(answer) > 1 and "choose" not in stem.lower():
+            problems.append(f"{where}: two answers means the question should say (Choose two.)")
+        if not why:
+            problems.append(f"{where}: add 'Why: ...'")
+        if not any(AWS_LINK.search(s) for s in sources):
+            problems.append(f"{where}: add 'Source: <AWS page>'")
+        if len(problems) > start:
+            continue
+        items.append({
+            "id": f"{code}/bank/{qid}",
+            "kind": "bank",
+            "domain": code,
+            "domainName": name,
+            "task": task,
+            "topic": "question-bank",
+            "title": m.group(3).strip(),
+            "author": "leads",
+            "question": {"stem": stem, "options": options, "answer": answer, "why": why},
+            "sources": sources,
+            "path": rel(path),
+        })
+    return items
+
+
+def bank_files():
+    return sorted(p for p in BANK.glob("*.md") if not p.name.startswith("_")) if BANK.exists() else []
+
 
 def card_files():
     return sorted(p for p in GUIDE.glob("*/*/*.md") if not p.name.startswith("_"))
@@ -215,9 +293,10 @@ def other_text_files():
 def cmd_check(args):
     problems = []
     cards = [c for c in (read_card(p, problems) for p in card_files()) if c]
+    bank = [q for p in bank_files() for q in read_bank(p, problems)]
     for p in log_files():
         read_log(p, problems)
-    checked = set(card_files()) | set(log_files())
+    checked = set(card_files()) | set(log_files()) | set(bank_files())
     for p in other_text_files():
         if p not in checked and p != Path(__file__).resolve():
             check_secrets(p, p.read_text(encoding="utf-8", errors="ignore"), problems)
@@ -225,7 +304,7 @@ def cmd_check(args):
     if args.author and args.added:
         for name in args.added:
             path = (ROOT / name).resolve()
-            if path.suffix == ".md" and not path.name.startswith("_") and (
+            if path.suffix == ".md" and not path.name.startswith("_") and BANK not in path.parents and (
                     GUIDE in path.parents or LOGS in path.parents):
                 if path.stem.lower() != args.author.lower():
                     problems.append(f"{name}: new cards and logs are named after the PR author (@{args.author})")
@@ -236,19 +315,20 @@ def cmd_check(args):
             print(f"  - {p}")
         print("\nThe card template is study-guide/_template.md and the log template is build/log/_template.md.")
         return 1
-    print(f"All good: {len(cards)} card(s) and {len(log_files())} build log(s) checked.")
+    print(f"All good: {len(cards)} card(s), {len(bank)} bank question(s) and {len(log_files())} build log(s) checked.")
     return 0
 
 
 def cmd_build(_args):
     problems = []
     cards = [c for c in (read_card(p, problems) for p in card_files()) if c]
+    bank = [q for p in bank_files() for q in read_bank(p, problems)]
     for p in problems:
         print(f"  skipped: {p}", file=sys.stderr)
-    SITE_JSON.write_text(json.dumps({"cards": cards}, indent=1), encoding="utf-8")
-    print(f"Wrote {len(cards)} card(s) to {rel(SITE_JSON)}")
+    SITE_JSON.write_text(json.dumps({"cards": cards + bank}, indent=1), encoding="utf-8")
+    print(f"Wrote {len(cards)} card(s) and {len(bank)} bank question(s) to {rel(SITE_JSON)}")
     if LAMBDA_JSON.parent.exists():
-        questions = [{"id": c["id"], "title": c["title"], "domain": c["domain"], **c["question"]} for c in cards]
+        questions = [{"id": c["id"], "title": c["title"], "domain": c["domain"], **c["question"]} for c in cards + bank]
         LAMBDA_JSON.write_text(json.dumps(questions), encoding="utf-8")
         print(f"Wrote {len(questions)} question(s) to {rel(LAMBDA_JSON)}")
     return 0

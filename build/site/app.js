@@ -8,7 +8,8 @@ const DOMAINS = {
 };
 const API = ((window.HUB_CONFIG || {}).apiUrl || "").replace(/\/$/, "");
 
-let cards = [];
+let cards = [];      // student cards
+let questions = [];  // every quiz question: cards plus the leads' seed bank
 let activeDomain = "all";
 
 const $ = (sel) => document.querySelector(sel);
@@ -99,16 +100,16 @@ let quiz = null;
 
 function pickQuestions(domain, length) {
   const shuffle = (arr) => arr.map((v) => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map((p) => p[1]);
-  if (domain !== "mix") return shuffle(cards.filter((c) => c.domain === domain)).slice(0, length);
+  if (domain !== "mix") return shuffle(questions.filter((c) => c.domain === domain)).slice(0, length);
 
   // Exam mix: take questions from each domain in proportion to its exam weight.
   const picked = [];
   Object.entries(DOMAINS).forEach(([key, d]) => {
     const want = Math.round((length * d.weight) / 100);
-    picked.push(...shuffle(cards.filter((c) => c.domain === key)).slice(0, want));
+    picked.push(...shuffle(questions.filter((c) => c.domain === key)).slice(0, want));
   });
   // Top up from anything left if a domain is short of questions.
-  const rest = shuffle(cards.filter((c) => !picked.includes(c)));
+  const rest = shuffle(questions.filter((c) => !picked.includes(c)));
   return shuffle(picked.concat(rest.slice(0, Math.max(0, length - picked.length))));
 }
 
@@ -141,7 +142,7 @@ function showQuestion() {
   const q = c.question;
   const multi = q.answer.length > 1;
   $("#quiz-run").innerHTML = `
-    <p class="muted">Question ${quiz.index + 1} of ${quiz.questions.length} · ${c.domain} ${timerText()}</p>
+    <p class="muted">Question ${quiz.index + 1} of ${quiz.questions.length} · ${c.domain} · ${c.kind === "bank" ? "leads' bank" : "by @" + esc(c.author)} ${timerText()}</p>
     <p class="stem">${esc(q.stem)}</p>
     <form id="answer-form">
       ${Object.entries(q.options).map(([k, v]) => `
@@ -158,6 +159,7 @@ function showQuestion() {
     document.querySelectorAll("#answer-form input, #answer-form button").forEach((el) => (el.disabled = true));
     $("#feedback").innerHTML = `
       <p class="${correct ? "good" : "bad"}"><b>${correct ? "Correct." : `Not quite. The answer is ${q.answer.join(", ")}.`}</b> ${esc(q.why)}</p>
+      <p class="muted">${c.sources.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener">AWS source</a>`).join(" · ")}</p>
       <p class="muted" id="stat"></p>
       <button class="primary" id="next">${quiz.index + 1 < quiz.questions.length ? "Next" : "See my score"}</button>`;
     $("#next").addEventListener("click", () => {
@@ -234,11 +236,15 @@ async function start() {
   if (API) document.querySelector('[data-view="qotd"]').hidden = false;
   try {
     const res = await fetch("cards.json", { cache: "no-store" });
-    cards = (await res.json()).cards || [];
+    const all = (await res.json()).cards || [];
+    cards = all.filter((c) => c.kind !== "bank");
+    questions = all;
   } catch (e) {
     $("#cards").innerHTML = `<p class="bad">cards.json not found. Run <code>python build/tools/hub.py build</code> first.</p>`;
   }
-  $("#count").textContent = `${cards.length} card(s) so far.`;
+  const bank = questions.length - cards.length;
+  $("#count").textContent = `${cards.length} card(s) and ${questions.length} practice question(s) so far` +
+    (bank ? ` (${bank} from the leads' seed bank).` : ".");
   renderChips();
   renderCards();
   $("#search").addEventListener("input", renderCards);
