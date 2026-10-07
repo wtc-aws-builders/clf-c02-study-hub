@@ -36,6 +36,24 @@ exam together, over 12 weeks from 9 October 2026. This repo is what we build on 
 
 Every week after that, start by updating your copy: `git switch main && git pull`.
 
+## Exam integrity: read this before you write anything
+
+> **Never post real CLF-C02 exam questions here, in any form.** Not word for word, not reworded, not "from memory",
+> and nothing from exam dump sites or paid practice tests.
+
+Every question in this repo must be **written by us, from public AWS information only**: AWS documentation,
+whitepapers, product pages and AWS training. Every card links the AWS page it is based on, and reviewers check it.
+
+Why this matters:
+
+- Sharing or using real exam content breaks the **AWS Certification Program Agreement**. AWS can **revoke your
+  certificate** and ban you from future exams. It would also put the whole group at risk.
+- Dump answers are often wrong, and memorising them does not teach you the cloud.
+
+If you see something that looks like a real exam question or comes from a dump site, do not approve the PR.
+Request changes and tell a lead. After your exam, you may share tips about the experience
+(`study-guide/exam-day/`), never the questions.
+
 ## Every week
 
 1. **Friday:** 1-hour workshop on the week's topic. The week's task is posted as an issue labelled `week`.

@@ -40,6 +40,9 @@ git push -u origin <your-username>/week-03
 
 ## What makes a good card
 
+- **Original and AWS-based only.** Your question is written by you from AWS documentation. **Never** use real exam
+  questions (word for word, reworded or remembered), exam dump sites or paid practice tests. Doing so breaks the
+  AWS Certification Program Agreement and can get certificates revoked. See the README's exam integrity section.
 - **Your own words.** Copying from AWS pages teaches you nothing and makes a worse study guide.
 - **Short.** Two or three sentences per section. The exam tests recognition, not essays.
 - **A real exam-style question.** A short scenario, four believable options, one clear answer.
@@ -51,6 +54,8 @@ git push -u origin <your-username>/week-03
 Every PR needs **one approval** before it can merge. Review at least one PR for every PR you open.
 
 - Is the answer to the question actually right? Check it against the source link.
+- Does the question look copied from a real exam, a dump site or a paid practice test? If so, request changes and tell a lead.
+- Is the source an AWS page (docs.aws.amazon.com, aws.amazon.com and similar)? Blogs and forums are not enough.
 - Is any option ambiguous, so two answers could be right?
 - Does "Easily confused with" name a real confusion?
 - Any keys, passwords or 12 digit account IDs? Request changes straight away.
