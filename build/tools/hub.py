@@ -49,7 +49,7 @@ SECRET_PATTERNS = [
 # Lines from the templates. If one is still there, the card or log has not been filled in yet.
 TEMPLATE_PHRASES = [
     "No copy and paste from AWS pages", "One or two real situations", "- A) First option",
-    "the-page-you-checked-this-against", "The steps from this week's issue", "your-github-username",
+    "the-page-you-checked-this-against", "Write your own scenario question, based only on", "The steps from this week's issue", "your-github-username",
 ]
 
 
